@@ -1,0 +1,56 @@
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(entityManagerFactoryRef = "entityManagerFactory", basePackages = {
+		"com........", "com........." })  // package where is your entity class are
+public class DatabaseConfiguration {
+
+	@Value("${spring.yourdb-datasource.url}")
+	private String url;
+	@Value("${spring.yourdb-datasource.driver-class-name}")
+	private String driver;
+	@Value("${spring.yourdb-datasource.username}")
+	private String username;
+	@Value("${spring.yourdb-datasource.password}")
+	private String password;
+
+	@Bean(name = "dataSource")
+	@Primary
+	public DataSource dataSource() {
+		return DataSourceBuilder.create().driverClassName(driver).url(url).username(username).password(password)
+				.build();
+	}
+
+	@Bean(name = "entityManagerFactory")
+	@Primary
+	@PersistenceContext(unitName = "yourDbPU")
+	public LocalContainerEntityManagerFactoryBean entityManagerFactory(EntityManagerFactoryBuilder builder,
+			@Qualifier("dataSource") DataSource dataSource) {
+		return builder.dataSource(dataSource)
+				.packages("com........", "com.........")
+				.persistenceUnit("yourDbPU").build();
+	}
+
+	@Bean(name = "transactionManager")
+	@Primary
+	public PlatformTransactionManager transactionManager(
+			@Qualifier("entityManagerFactory") EntityManagerFactory entityManagerFactory) {
+
+		return new JpaTransactionManager(entityManagerFactory);
+	}
+}
