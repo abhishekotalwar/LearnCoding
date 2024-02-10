@@ -1,3 +1,18 @@
+import java.net.URL;
+import java.util.function.Supplier;
+import javax.net.ssl.SSLContext;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.ssl.SSLContexts;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.util.ResourceUtils;
+import org.springframework.web.client.RestTemplate;
+
 public class RestTemplateSupplier implements Supplier<RestTemplate> {
 
    private static final String[] SUPPORTED_PROTOCOLS = new String[] { "TLSv1.2" };
