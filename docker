@@ -1,0 +1,17 @@
+FROM openjdk:17-jdk-slim
+
+ENV APP_HOME /usr/app
+
+ADD target/yourjar.jar ${APP_HOME}/yourjar.jar
+WORKDIR ${APP_HOME}
+
+EXPOSE 8090 443
+
+ENTRYPOINT [ "sh", "-c", "java \
+   --enable-preview \
+   -Djavax.net.ssl.keyStore=/keystore/YourKeystore.jks \
+   -Djavax.net.ssl.keyStorePassword=$KEY_STORE_SECRET \
+   -DprivateKeyPassword=$PRIVATE_KEY_SECRET \
+   -Djavax.net.ssl.trustStore=/certs/YourJks.jks  \
+   -Djavax.net.ssl.trustStorePassword=$TRUSTED_CERTS_SECRET  \
+   -jar yourjar.jar"]
