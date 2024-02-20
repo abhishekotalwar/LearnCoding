@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Order(2)
+@WebFilter("/jobexecutions")
 @Component
 public class JobExecutionFilter extends OncePerRequestFilter {
 
@@ -32,7 +33,6 @@ public class JobExecutionFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
       HttpServletRequest httpRequest = (HttpServletRequest) request;
 
-      if (request.getRequestURI().contains("/jobexecutions")) {
          Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
          String gid = (String) authentication.getPrincipal();
          if (Objects.isNull(gid)) {
@@ -58,7 +58,7 @@ public class JobExecutionFilter extends OncePerRequestFilter {
          } catch (JSONException e) {
             throw new ServiceRTException(e.getMessage(), e);
          }
-      }
+      
       chain.doFilter(request, response);
    }
 
