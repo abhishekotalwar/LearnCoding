@@ -1,0 +1,388 @@
+------------------------------------------------------
+In Maven pom.xml
+------------------------------------------------------
+<properties>
+		<!-- default target to reset DB -->
+		<target>completeReset</target>
+	</properties>
+
+	<profiles>
+		<profile>
+			<id>databaseReset</id>
+			<build>
+				<pluginManagement>
+					<plugins>
+					</plugins>
+				</pluginManagement>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-enforcer-plugin</artifactId>
+						<version>3.1.0</version>
+						<executions>
+							<execution>
+								<id>enforce-target-property</id>
+								<goals>
+									<goal>enforce</goal>
+								</goals>
+								<configuration>
+									<rules>
+										<requireProperty>
+											<property>target</property>
+											<message>!!!!!!!!!!!!!! You must set a target property, with ant task target for src/main/resources/build.xml !!!!!!!!!!!!!!</message>
+											<regex>.*\w.*</regex>
+											<regexMessage>The target property must contain at least one
+												letter.</regexMessage>
+										</requireProperty>
+									</rules>
+									<fail>true</fail>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>2.4</version>
+						<executions>
+							<execution>
+								<id>copy-dependencies</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>copy-dependencies</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>1.7</version>
+						<executions>
+							<execution>
+								<id>run-ant-build</id>
+								<phase>compile</phase>
+								<configuration>
+									<target>
+										<echo message="Custom Ant Target is: ${target}" />
+										<echo message="> db.url: ${db.url}" />
+										<echo message="> pegasus.db.username: ${db.username}" />
+										<echo message="> pegasus.db.password: ${db.password}" />
+										<echo message="> profile: ${profile}" />
+										<property name="debug.mode" value="true" />
+										<property name="use.env.ant" value="true" />
+										<property name="db.url" value="${db.url}" />
+										<property name="db.username" value="${db.username}" />
+										<property name="db.password" value="${db.password}" />
+									    <property name="profile" value="${profile}" />
+										<property name="default.directory" value="${default.directory}" />
+										
+										<ant antfile="${basedir}/src/main/resources/build.xml">
+											<target name="${target}" />
+										</ant>
+									</target>
+								</configuration>
+								<goals>
+									<goal>run</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+				<resources>
+					<resource>
+						<directory>src/main/resources</directory>
+						<excludes>
+							<exclude>**/*.*</exclude>
+						</excludes>
+						<filtering>false</filtering>
+					</resource>
+				</resources>
+			</build>
+		</profile>
+	</profiles>
+
+------------------------------------------------------
+Build.xml with Ant -- contains following
+------------------------------------------------------
+	<target name="completeReset" depends="reset,insertSystemData,insertFxData,updateDefaultDirectory,insertRegressionTestData,insertTestData,adjustSequences">
+	</target>
+
+Target reset is,
+	<target name="reset" depends="init">
+		<taskdef name="database" classname="com.database.ant.DatabaseTask" classpathref="cp" />
+		<database
+			driver="${db.driver}"
+			url="${db.url}"
+			username="${db.username}"
+			password="${db.password}"
+			workingDir="${sql.dir}"
+			debugMode="${debug.mode}"
+			command="reset"
+			system="default"
+			version="${db.version}"
+			profile="${profile}">
+		</database>
+	</target>
+
+	<target name="updateErrorMailRecipientSQL">
+		<sql
+			driver="${db.driver}"
+			url="${db.url}"
+			userid="${db.username}"
+			password="${db.password}"
+			classpathref="cp"
+			delimiter=";"
+			encoding="UTF-8">
+			<transaction>
+				UPDATE appl_mails SET to_addrs = '${error.mail.toaddress}'
+			</transaction>
+		</sql>
+	</target>
+
+------------------------------------------------------
+And DatabaseTask is,
+------------------------------------------------------
+import org.apache.tools.ant.Task;
+
+public class DatabaseTask extends Task {
+	
+	private DatabaseProperties dbProperties = null;
+
+	private String workingDir = null;
+	
+	private String command = null;
+	
+	private String version = null;
+
+	private String system = null;
+	
+	private DatabaseActivity dbActivity = null;
+	
+	private String profile = null;
+
+   public DatabaseTask() {
+		dbProperties = new DatabaseProperties();
+	}
+	
+	/* (non-Javadoc)
+	 * @see org.apache.tools.ant.Task#execute()
+	 */
+	public void execute() throws BuildException {
+		if (dbProperties.getDriver() == null || "".equals(dbProperties.getDriver())) {
+			throw new BuildException("Driver must have some value");
+		}
+		
+		if (dbProperties.getUrl() == null || "".equals(dbProperties.getUrl())) {
+			throw new BuildException("Url must have some value");
+		}
+		
+		if (system == null || "".equals(system)) {
+			throw new BuildException("System must have some value");
+		}
+		
+		if (command == null || "".equals(command)) {
+			throw new BuildException("Command must have some value");
+		}
+		
+		if (workingDir == null || "".equals(workingDir)) {
+			throw new BuildException("Working Dir must have some value");
+		}
+		
+      if (profile == null || "".equals(profile)) {
+         throw new BuildException("Please provide profile value");
+      }
+	      
+		
+		File workingDirFile = new File(PathConverter.convertPath(workingDir));
+		
+		if (!workingDirFile.exists() || !workingDirFile.isDirectory()) {
+			throw new BuildException("The working dir is not a directory: " + workingDirFile);
+		}
+		
+		Float fVersion = null;
+       
+		if  (version != null && !"".equals(version)) {
+			try {
+				fVersion = new Float(version);
+			} catch (NumberFormatException nfe) {
+				throw new BuildException("The version '" + version + "'is not a number (dot as decimal separator)");
+			}
+		}
+
+		dbActivity = new DatabaseActivity(dbProperties,workingDirFile);
+		dbActivity.executeCommand(command, system, fVersion, profile);
+	}
+	//getter and setter
+}
+
+------------------------------------------------------
+dbActivity is
+------------------------------------------------------
+
+import com.database.ant.connection.DatabaseAccess;
+
+ /**
+    * 
+    * @param system
+    * @param command
+    * @param version
+    * @param profile 
+    */
+   public void executeCommand(String command, String system, Float version, String profile) {
+      File updateXmlFile =  new File(PathConverter.convertPath(workingDir.getAbsolutePath() + File.separator + UPDATE_XML));
+     
+      if("oracle".equals(profile)) {
+         updateXmlFile =  new File(PathConverter.convertPath(workingDir.getAbsolutePath() + File.separator + UPDATE_XML_ORACLE));
+      }
+
+      if (!updateXmlFile.exists()) {
+         throw new BuildException("Update file not found: " + updateXmlFile.getAbsolutePath());
+      }
+
+      databaseUpdates = UpdateXMLHandler.getInstance().loadUpdates(updateXmlFile);
+
+      File localUpdateXmlFile = new File(PathConverter
+               .convertPath(workingDir.getAbsolutePath() + File.separator + LOCAL_UPDATE_DIR + File.separator + UPDATE_XML));
+
+      if("oracle".equals(profile)) {
+         localUpdateXmlFile = new File(PathConverter
+                  .convertPath(workingDir.getAbsolutePath() + File.separator + LOCAL_UPDATE_DIR + File.separator + UPDATE_XML_ORACLE));
+      }
+
+      
+      if (localUpdateXmlFile.exists()) {
+         localDatabaseUpdates = UpdateXMLHandler.getInstance().loadUpdates(localUpdateXmlFile);
+      }
+
+      if (COMMAND_CLEAN.equalsIgnoreCase(command)) {
+         cleanDatabase(profile);
+         initDatabase(profile);
+      } else if (COMMAND_UPDATE.equalsIgnoreCase(command)) {
+         updateDatabase(system, version, profile);
+         postUpdateDatabase(profile);
+      } else if (COMMAND_RESET.equalsIgnoreCase(command)) {
+         cleanDatabase(profile);
+         initDatabase(profile);
+         updateDatabase(system, version, profile);
+         postUpdateDatabase(profile);
+      } else if (COMMAND_TRUNCATE.equalsIgnoreCase(command)) {
+         truncateDatabase();
+      } else if (COMMAND_REGRESSION_TEST_DATA.equalsIgnoreCase(command)) {
+         insertRegressionTestData(profile);
+      } else if (COMMAND_INSERT_TEST_DATA.equalsIgnoreCase(command)) {
+         insertTestData(profile);
+      } else if (COMMAND_ADJUST_SEQUENCES.equalsIgnoreCase(command)) {
+         adjustSequences(profile);
+      }
+
+      else {
+         try {
+            dbAccess.close();
+         } catch (SQLException e) {
+            LOG.error("Failed to close the db connection", e);
+         }
+         throw new BuildException("Command unknown: " + command);
+      }
+
+      try {
+         dbAccess.close();
+      } catch (SQLException e) {
+         LOG.error("Failed to close the db connection", e);
+      }
+   }
+
+------------------------------------------------------
+Method from dbActivity is
+------------------------------------------------------
+   private void insertRegressionTestData(String profile) throws BuildException {
+      String dbVersion = getCurrentDBVersion();
+      
+      String filepath = workingDir.getAbsolutePath() + File.separator + TEST_DATA_DIR + File.separator
+               + REGRESSION_TEST_DATA_FILE_NAME + dbVersion +  REGRESSION_TEST_DATA_FILE_EXTENSION;
+
+      if ("oracle".equals(profile)) {
+         filepath = workingDir.getAbsolutePath() + File.separator + TEST_DATA_DIR + File.separator
+                  + REGRESSION_TEST_DATA_FILE_NAME_ORACLE + dbVersion + REGRESSION_TEST_DATA_FILE_EXTENSION;
+      }
+
+      File file = new File(PathConverter.convertPath(filepath));
+
+      if (!file.exists()) {
+         throw new BuildException("File not found: " + filepath);
+      }
+
+      LOG.info("Loading sql commands from file: " + filepath);
+
+      DatabaseCommands commands = CommandXMLHandler.getInstance().loadSQL(file);
+
+      try {
+         int count = dbAccess.executeCommands(commands);
+
+         LOG.info("Commands executed: " + count);
+
+      } catch (SQLException e) {
+         throw new BuildException("Failed to execute sql command", e);
+      }
+   }
+
+------------------------------------------------------
+DatabaseAccess is
+------------------------------------------------------
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class DatabaseAccess {
+
+   private static final Logger LOG = LoggerFactory.getLogger(DatabaseAccess.class);
+
+   private static final int BATCH_SIZE = 50;
+
+   private DatabaseProperties properties = null;
+
+   private Connection connection = null;
+
+   /**
+    * 
+    * @param properties
+    */
+   public DatabaseAccess(DatabaseProperties properties) {
+      this.properties = properties;
+   }
+
+   /**
+    * 
+    * @return
+    * @throws SQLException
+    */
+   protected Connection getConnection() throws SQLException {
+      if (connection == null) {
+         try {
+            Class.forName(properties.getDriver());
+         } catch (ClassNotFoundException e) {
+            throw new SQLException("Failed to load database driver: " + properties.getDriver());
+         }
+
+         connection = DriverManager.getConnection(properties.getUrl(), properties.getUsername(), properties.getPassword());
+         connection.setAutoCommit(false);
+      }
+
+      return connection;
+   }
+
+   /**
+    * 
+    * @throws SQLException
+    */
+   public void close() throws SQLException {
+      if (connection != null) {
+         connection.commit();
+         connection.close();
+         connection = null;
+      }
+   }
+}
