@@ -1,0 +1,8 @@
+Option 1:
+
+@Column(name = "BILLING_RELATED")
+@ColumnTransformer(read = "CASE WHEN billing_related = 1 THEN TRUE ELSE FALSE END",
+                   write = "CASE WHEN ? THEN 1 ELSE 0 END")
+private Boolean billingRelated;
+
+Option 2:
