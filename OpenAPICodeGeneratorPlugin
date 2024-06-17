@@ -1,42 +1,49 @@
 To generate code from .yaml we can use openapi-generator-maven-plugin like below,
 
-<plugin>
-				<groupId>org.openapitools</groupId>
-				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>5.1.0</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<inputSpec>
-								${project.basedir}/src/main/resources/oas/3.0/xxxx-api.yaml
-							</inputSpec>
-							<generatorName>spring</generatorName>
-							<library>spring-boot</library>
-							<apiPackage>com.xxx.yyy.openapi.api.xxx</apiPackage>
-							<modelPackage>com.xxx.yyy.openapi.api.xxx.model</modelPackage>
-							<supportingFilesToGenerate>
-								ApiUtil.java
-							</supportingFilesToGenerate>
-
-							<configOptions>
-
-								<skipDefaultInterface>true</skipDefaultInterface>
-								<delegatePattern>false</delegatePattern>
-								<reactive>false</reactive>
-								<interfaceOnly>true</interfaceOnly>
-								<!--dateLibrary>custom</dateLibrary-->
-
-							</configOptions>
-							<!--typeMappings>
-								<typeMapping>OffsetDateTime=LocalDateTime</typeMapping>
-							</typeMappings>
-							<importMappings>
-								<importMapping>java.time.OffsetDateTime=java.time.LocalDateTime</importMapping>
-							</importMappings-->
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+  <plugin>
+        <groupId>io.swagger.codegen.v3</groupId> <--! v3 -->
+        <artifactId>swagger-codegen-maven-plugin</artifactId>
+        <version>3.0.42</version>
+        <executions>
+          <execution>
+            <!-- prints (only, additionally) language specific(!) "config options help" -->
+            <id>api-generate-help</id> 
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <inputSpec>src/main/resources/openapi.yaml</inputSpec>
+              <!-- language/generator!! -->
+              <language>spring</language>
+              <configHelp>true</configHelp>
+            </configuration>
+          </execution>
+          <!-- this is the generation: -->
+          <execution>
+            <id>api-generate</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <!-- input api definition -->
+              <inputSpec>src/main/resources/openapi.yaml</inputSpec>
+              <!-- language/generator!! -->
+              <language>spring</language>
+              <!-- output folder -->
+              <output>${project.build.directory}/gen</output>
+              <!-- ... -->
+              <configOptions> <!-- these are language specific: -->
+                <interfaceOnly>false</interfaceOnly>
+                <java8>false</java8>
+                <dateLibrary>java8</dateLibrary>
+                <!--sourceFolder>.</sourceFolder-->
+                <throwsException>true</throwsException>
+                <useTags>true</useTags>
+                <useBeanValidation>true</useBeanValidation>
+              </configOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
