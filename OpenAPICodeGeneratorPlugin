@@ -11,7 +11,7 @@ To generate code from .yaml we can use openapi-generator-maven-plugin like below
 						</goals>
 						<configuration>
 							<inputSpec>
-								${project.basedir}/src/main/resources/oas/3.0/updateRating-api.yaml
+								${project.basedir}/src/main/resources/oas/3.0/xxxx-api.yaml
 							</inputSpec>
 							<generatorName>spring</generatorName>
 							<library>spring-boot</library>
