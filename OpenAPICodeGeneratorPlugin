@@ -1,0 +1,42 @@
+To generate code from .yaml we can use openapi-generator-maven-plugin like below,
+
+<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>5.1.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>
+								${project.basedir}/src/main/resources/oas/3.0/updateRating-api.yaml
+							</inputSpec>
+							<generatorName>spring</generatorName>
+							<library>spring-boot</library>
+							<apiPackage>com.siemens.sfs.openapi.api.pegasus</apiPackage>
+							<modelPackage>com.siemens.sfs.openapi.api.pegasus.model</modelPackage>
+							<supportingFilesToGenerate>
+								ApiUtil.java
+							</supportingFilesToGenerate>
+
+							<configOptions>
+
+								<skipDefaultInterface>true</skipDefaultInterface>
+								<delegatePattern>false</delegatePattern>
+								<reactive>false</reactive>
+								<interfaceOnly>true</interfaceOnly>
+								<!--dateLibrary>custom</dateLibrary-->
+
+							</configOptions>
+							<!--typeMappings>
+								<typeMapping>OffsetDateTime=LocalDateTime</typeMapping>
+							</typeMappings>
+							<importMappings>
+								<importMapping>java.time.OffsetDateTime=java.time.LocalDateTime</importMapping>
+							</importMappings-->
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
