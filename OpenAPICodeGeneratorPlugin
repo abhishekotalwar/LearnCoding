@@ -15,8 +15,8 @@ To generate code from .yaml we can use openapi-generator-maven-plugin like below
 							</inputSpec>
 							<generatorName>spring</generatorName>
 							<library>spring-boot</library>
-							<apiPackage>com.siemens.sfs.openapi.api.pegasus</apiPackage>
-							<modelPackage>com.siemens.sfs.openapi.api.pegasus.model</modelPackage>
+							<apiPackage>com.xxx.yyy.openapi.api.xxx</apiPackage>
+							<modelPackage>com.xxx.yyy.openapi.api.xxx.model</modelPackage>
 							<supportingFilesToGenerate>
 								ApiUtil.java
 							</supportingFilesToGenerate>
