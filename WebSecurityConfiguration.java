@@ -48,4 +48,58 @@ public class WebSecurityConfiguration {
 
       return httpSecurity.build();
    }
+
+
+   ////
+
+   @Bean
+   public WebSecurityCustomizer webSecurityCustomizer() {
+      return (web) -> web.ignoring().requestMatchers("/staticText/**", "/news/**", "/loggerCollector", "/mappings",
+               "/dictionary");
+   }
+
+   @Bean
+   public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+      httpSecurity.authorizeHttpRequests((authorize) -> authorize.requestMatchers(antMatcher("/h2-console/**")).permitAll()
+               .requestMatchers(antMatcher("/")).permitAll());
+
+      httpSecurity.csrf((csrf) -> csrf.disable())
+               .authorizeHttpRequests(
+                        (authorize) -> authorize.requestMatchers(antMatcher("/UserManagementService")).authenticated())
+               .authorizeHttpRequests(
+                        (authorize) -> authorize.requestMatchers(antMatcher("/actuator/manage/loggers")).authenticated())
+               .authorizeHttpRequests(
+                        (authorize) -> authorize.requestMatchers(antMatcher("/actuator/manage/httptrace")).authenticated())
+               .httpBasic(Customizer.withDefaults());
+
+      httpSecurity.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+               .oauth2ResourceServer((oauth2) -> oauth2.jwt(Customizer.withDefaults()));
+
+      httpSecurity.csrf((csrf) -> csrf.disable()).cors(Customizer.withDefaults());
+
+      httpSecurity.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
+
+      return httpSecurity.build();
+   }
+
+   //
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication().withUser(manageUser).password("{noop}" + managePass).roles(user);
+    }
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+       httpSecurity.csrf(csrf -> csrf.disable()).httpBasic(Customizer.withDefaults()).authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/manage/loggers").authenticated().requestMatchers("/manage/httptrace").authenticated());
+
+       httpSecurity
+                .authorizeHttpRequests(
+                         authorize -> authorize.requestMatchers("/v1/alg/**").permitAll().requestMatchers("/v1/algs").permitAll())
+                .addFilterBefore(filter, BasicAuthenticationFilter.class);
+
+       return httpSecurity.build();
+    }
+   
 }
