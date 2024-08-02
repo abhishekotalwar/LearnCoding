@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="AdditionalInfo" table="ADD_INFOS">
+    	<composite-id name="id" class="com.siemens.sfs.pegasus.common.domains.transactionaldata.AdditionalInfoPKey">
+        	<key-property name="id" type="java.lang.Long">
+        		<column name="ID" precision="15" scale="0" not-null="true" />
+        	</key-property>
+        	<key-property name="sId" type="java.lang.Long">
+        		<column name="S_ID" precision="15" scale="0" not-null="true" />
+        	</key-property>
+        	<key-property name="cIgnore" type="org.hibernate.type.NumericBooleanType">
+        		<column name="C_IGNORE" precision="1" scale="0" not-null="true"/>
+        	</key-property>
+			<generator class="sequence">
+				<param name="sequence_name">RCV_ADD_INFOS_SEQ</param>
+			</generator>
+        </composite-id>
+
+        <property name="info01" type="string">
+            <column name="INFO_01" length="50" />
+        </property>                        
+              
+        <property name="code" type="string">
+            <column name="CODE" length="10" not-null="true" unique="true" />
+        </property>
+              
+    </class>
+</hibernate-mapping>
